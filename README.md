@@ -1,11 +1,22 @@
-<div align="center">
+# Coffers.ai
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Real-time earnings call narrative intelligence platform.
 
-  <h1>Built with AI Studio</h2>
+## Local Setup
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+2. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
 
-</div>
+3. **Open the app:**
+   Navigate to [http://localhost:3000](http://localhost:3000).
+
+## Configuration
+
+Supabase keys (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) are required only for the production waitlist functionality. The application runs in **Simulation Mode** without them.
