@@ -70,11 +70,18 @@ export interface CompanyProfile {
   lastQuarterMomentum: number; // -100 to 100
 }
 
+export interface NarrativeDriver {
+  quote: string;        // Verbatim phrase from transcript
+  explanation: string;  // One-line context (optional in minimal UI)
+  sentiment: 'Positive' | 'Negative' | 'Neutral';
+  trend: 'Up' | 'Down' | 'Flat'; // Explicit direction for UI arrow
+}
+
 export interface AnalysisResponse {
   confidenceScore: number;
   riskScore: number;
-  confidenceDrivers: string[];
-  riskDrivers: string[];
+  confidenceDrivers: NarrativeDriver[];
+  riskDrivers: NarrativeDriver[];
   toneAnalysis: string;
   consistencyNote: string;
   // New Intelligence Fields
