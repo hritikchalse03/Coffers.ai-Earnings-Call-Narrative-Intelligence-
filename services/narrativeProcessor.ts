@@ -57,6 +57,11 @@ export class NarrativeProcessor {
     confidence += (Math.random() * 10) - 5;
     risk += (Math.random() * 10) - 5;
 
+    // Deviation Metrics Simulation
+    const deviationIndex = (sentiment * (0.8 + Math.random() * 0.4)).toFixed(2);
+    const riskDrift = Math.round((risk - 30) * 1.5); // Baseline risk assumed ~30
+    const commitmentConsistency = (0.95 - (Math.abs(sentiment) * 0.2) + (Math.random() * 0.05)).toFixed(2);
+
     // Driver Extraction
     // We want to highlight the core phrase. 
     // Since our templates are simple, we can often just take the first half or a key substring.
@@ -86,11 +91,17 @@ export class NarrativeProcessor {
         else if (sentiment > 0) title = "Operational Beat";
         else title = "Operational Headwind";
 
+        // Baseline Delta Simulation
+        const deltaVal = (Math.random() * 0.3 * (sentiment > 0 ? 1 : -1)).toFixed(2);
+        const deltaSign = Number(deltaVal) > 0 ? '+' : '';
+        const baselineDelta = `Δ ${deltaSign}${deltaVal} vs Q2`;
+
         drivers.push({
             quote: quote,
             explanation: title, // Storing the "Theme Title" here for the UI
             sentiment: sentiment > 0 ? 'Positive' : 'Negative',
-            trend: sentiment > 0 ? 'Up' : 'Down'
+            trend: sentiment > 0 ? 'Up' : 'Down',
+            baselineDelta: baselineDelta
         });
     }
 
@@ -100,7 +111,10 @@ export class NarrativeProcessor {
         confidenceDrivers: sentiment > 0 ? drivers : [],
         riskDrivers: sentiment < 0 ? drivers : [],
         toneAnalysis: sentiment > 0 ? "Optimistic" : "Cautious",
-        consistencyNote: "Consistent"
+        consistencyNote: "Consistent",
+        deviationIndex: Number(deviationIndex),
+        riskDrift: riskDrift,
+        commitmentConsistency: Number(commitmentConsistency)
     };
   }
 }

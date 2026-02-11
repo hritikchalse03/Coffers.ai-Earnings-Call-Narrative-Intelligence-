@@ -5,12 +5,12 @@ import { TranscriptSegment, AnalysisResponse, NarrativeDriver } from '../types';
 import { StreamService } from '../services/streamService';
 import { NarrativeProcessor } from '../services/narrativeProcessor';
 
-// Definitions for KPI Hover States
+// Definitions for KPI Hover States (UPDATED FOR DEVIATION INTELLIGENCE)
 const METRIC_DEFINITIONS: Record<string, string> = {
-  "Confidence": "AI-derived score of speaker certainty and assertiveness (0-100).",
-  "Risk Level": "Frequency of hedging, defensive language, and risk disclosure.",
-  "Momentum": "Real-time rate of change in narrative sentiment over the last 5 minutes.",
-  "Discrepancy": "Detected contradictions between current statements and prior guidance.",
+  "Deviation Index": "Measures how far current language deviates from the last four quarters (semantic drift).",
+  "Forward Risk Drift": "Change in forward-looking caution relative to historical baseline.",
+  "Commitment Consistency": "Alignment of current statements with prior management commitments and guidance.",
+  "Topic Intensity": "Detected contradictions between current statements and prior guidance.",
   "Event Link": "Correlation strength with recent external market events.",
   "CEO-CFO Gap": "Divergence in sentiment between CEO (Strategy) and CFO (Execution)."
 };
@@ -53,6 +53,7 @@ interface DriverHistoryItem {
   confidence: number;
   impactLabel: string; // e.g., "+0.22"
   rawImpact: number;
+  baselineDelta: string;
 }
 
 interface LiveCallProps {
@@ -72,10 +73,10 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [driversHistory, setDriversHistory] = useState<DriverHistoryItem[]>([]);
   
-  // KPI States
-  const [confidence, setConfidence] = useState(50);
-  const [risk, setRisk] = useState(20);
-  const [momentum, setMomentum] = useState(0);
+  // KPI States (REFRAMED FOR DEVIATION INTELLIGENCE)
+  const [deviationIndex, setDeviationIndex] = useState(0.00);
+  const [riskDrift, setRiskDrift] = useState(0);
+  const [consistency, setConsistency] = useState(0.95);
   const [discrepancyLevel, setDiscrepancyLevel] = useState<'Low' | 'Medium' | 'High'>('Low');
 
   // UI States
@@ -95,8 +96,9 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
   const dragStartOffset = useRef<number>(0);
 
   // Panel & Splitter State (Pixel-based)
+  // Default to 380px to align with the new width targets (min 340px)
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [panelWidth, setPanelWidth] = useState(320); 
+  const [panelWidth, setPanelWidth] = useState(380); 
   const [isDragging, setIsDragging] = useState(false);
 
   // Interaction States
@@ -169,17 +171,20 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
       // CRITICAL: Check against REF to ensure we don't apply async updates from a previous run
       if (runId !== activeRunIdRef.current) return;
 
-      setConfidence(analysis.confidenceScore);
-      setRisk(analysis.riskScore);
+      // Map Analysis to Deviation Metrics
+      if (analysis.deviationIndex !== undefined) setDeviationIndex(analysis.deviationIndex);
+      if (analysis.riskDrift !== undefined) setRiskDrift(analysis.riskDrift);
+      if (analysis.commitmentConsistency !== undefined) setConsistency(analysis.commitmentConsistency);
       
       const sentiment = parseFloat(((analysis.confidenceScore - analysis.riskScore) / 100).toFixed(2));
-      setMomentum(sentiment);
       
       if (analysis.discrepancy) {
           setDiscrepancyLevel(analysis.discrepancy.severity);
       }
 
       // Update Chart Data (Append)
+      // Note: We map "Sentiment" to the Deviation Graph for visual continuity, 
+      // but conceptually we label it "Deviation"
       setChartData(prev => {
           const lastVal = prev.length > 0 ? prev[prev.length - 1].value : 0;
           const smoothVal = (lastVal * 0.7) + (sentiment * 0.3);
@@ -222,7 +227,8 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
                         title: d.explanation || "Narrative Signal",
                         confidence: Number((analysis.confidenceScore / 100).toFixed(2)),
                         impactLabel: impactStr,
-                        rawImpact: Math.abs(impactVal)
+                        rawImpact: Math.abs(impactVal),
+                        baselineDelta: d.baselineDelta || `Δ 0.00`
                     });
                 }
             });
@@ -258,9 +264,9 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
         setSegments([segment]);
         setChartData([]);
         setDriversHistory([]); 
-        setConfidence(50);
-        setRisk(20);
-        setMomentum(0);
+        setDeviationIndex(0);
+        setRiskDrift(0);
+        setConsistency(0.95);
 
         // Notify Parent to update Header
         if (onRunUpdate) {
@@ -303,9 +309,9 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
         const { width } = rightColumnRef.current.getBoundingClientRect();
         const saved = localStorage.getItem('drivers_panel_width_px');
         if (saved) {
-            setPanelWidth(Math.max(240, Number(saved)));
+            setPanelWidth(Math.max(340, Number(saved))); // Min width 340px
         } else if (width > 0) {
-            setPanelWidth(width * 0.3); 
+            setPanelWidth(width * 0.43); // Target ~43% of the 7-col container (approx 25% of total screen)
         }
     }
 
@@ -516,8 +522,8 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
     e.preventDefault();
     const containerRect = rightColumnRef.current.getBoundingClientRect();
     const rawWidth = containerRect.right - e.clientX;
-    const minWidth = 240;
-    const maxWidth = containerRect.width * 0.45;
+    const minWidth = 340; // Updated Min Width for readability
+    const maxWidth = containerRect.width * 0.75; // Allow more space for drivers (up to 75% of right col)
     setPanelWidth(Math.max(minWidth, Math.min(rawWidth, maxWidth)));
   };
 
@@ -535,8 +541,8 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col lg:grid lg:grid-cols-12 lg:h-[600px] border border-borderLight rounded-xl overflow-hidden shadow-sm bg-white">
       
-      {/* LEFT COLUMN: Transcript Stream */}
-      <div className="lg:col-span-7 flex flex-col border-b lg:border-b-0 lg:border-r border-borderLight bg-white relative h-[400px] lg:h-full min-h-0">
+      {/* LEFT COLUMN: Transcript Stream (UPDATED: 5/12 columns ~42%) */}
+      <div className="lg:col-span-5 flex flex-col border-b lg:border-b-0 lg:border-r border-borderLight bg-white relative h-[400px] lg:h-full min-h-0">
           <div className="h-12 flex-none flex items-center justify-between px-5 border-b border-borderLight bg-white z-10">
               <div className="flex items-center gap-2.5">
                   <div className="relative flex h-2 w-2">
@@ -601,8 +607,8 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
           </div>
       </div>
 
-      {/* RIGHT COLUMN: Graph + Panel */}
-      <div ref={rightColumnRef} className="lg:col-span-5 flex flex-col h-full overflow-hidden relative">
+      {/* RIGHT COLUMN: Graph + Panel (UPDATED: 7/12 columns ~58%) */}
+      <div ref={rightColumnRef} className="lg:col-span-7 flex flex-col h-full overflow-hidden relative">
            
           {/* TOP: Chart Area + Splitter + Panel */}
           <div className="flex-1 lg:h-1/2 min-h-[250px] lg:min-h-0 flex flex-row border-b border-borderLight relative bg-white overflow-hidden">
@@ -619,7 +625,8 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
                    onDoubleClick={handleDoubleClick}
                >
                     <div className="h-12 flex-none flex items-center justify-between px-5 border-b border-borderLight bg-white z-10">
-                        <span className="text-[13px] font-medium text-text tracking-tight">Narrative Momentum</span>
+                        {/* UPDATED HEADER TITLE */}
+                        <span className="text-[13px] font-medium text-text tracking-tight">Narrative Deviation Over Time</span>
                         
                         {!isPanelOpen && (
                             <button 
@@ -711,7 +718,7 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
                    </div>
                )}
 
-               {/* SIDE PANEL: Persistent Driver Tape */}
+               {/* SIDE PANEL: Persistent Driver Tape (Width optimized for readability) */}
                <div 
                     style={{ width: isPanelOpen ? `${panelWidth}px` : '0px' }}
                     className={`bg-white flex flex-col border-l-0 overflow-hidden ${isDragging ? '' : 'transition-[width] duration-300 ease-in-out'}`}
@@ -780,11 +787,13 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
                                                "{item.quote}"
                                            </div>
 
-                                           {/* Layer 3: Metadata */}
+                                           {/* Layer 3: Metadata (Updated with Baseline Delta) */}
                                            <div className="flex items-center gap-2 text-[10px] text-muted font-medium uppercase tracking-wider opacity-70">
-                                               <span>Confidence: {item.confidence}</span>
+                                               <span>Conf: {item.confidence}</span>
                                                <span className="text-borderLight">|</span>
                                                <span>Impact: {item.impactLabel}</span>
+                                               <span className="text-borderLight">|</span>
+                                               <span className="text-text font-semibold opacity-80">{item.baselineDelta}</span>
                                            </div>
                                        </div>
                                    );
@@ -805,13 +814,36 @@ export const LiveCall: React.FC<LiveCallProps> = ({ onRunUpdate }) => {
                </div>
           </div>
 
-          {/* BOTTOM HALF: KPI Grid */}
+          {/* BOTTOM HALF: KPI Grid (REFRAMED METRICS) */}
           <div className="flex-1 lg:h-1/2 min-h-[250px] lg:min-h-0 bg-gray-50/50 p-4 overflow-hidden">
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 h-full">
-                  <KpiCard label="Confidence" value={confidence} suffix="%" icon={<Activity size={14} />} />
-                  <KpiCard label="Risk Level" value={risk} suffix="%" icon={<AlertCircle size={14} />} color={risk > 50 ? 'text-red-600' : 'text-text'} />
-                  <KpiCard label="Momentum" value={momentum > 0 ? `+${momentum}` : momentum} icon={<TrendingUp size={14} />} color={momentum > 0 ? 'text-emerald-600' : 'text-red-600'} />
-                  <KpiCard label="Discrepancy" value={discrepancyLevel} icon={<RefreshCw size={14} />} />
+                  {/* Metric 1: Narrative Deviation Index */}
+                  <KpiCard 
+                    label="Deviation Index" 
+                    value={deviationIndex > 0 ? `+${deviationIndex.toFixed(2)}` : deviationIndex.toFixed(2)} 
+                    icon={<Activity size={14} />} 
+                    color={Math.abs(deviationIndex) > 0.5 ? 'text-text' : 'text-muted'}
+                  />
+                  
+                  {/* Metric 2: Forward Risk Drift */}
+                  <KpiCard 
+                    label="Forward Risk Drift" 
+                    value={riskDrift > 0 ? `+${riskDrift}` : riskDrift} 
+                    suffix="%" 
+                    icon={<AlertCircle size={14} />} 
+                    color={riskDrift > 15 ? 'text-red-600' : 'text-text'} 
+                  />
+                  
+                  {/* Metric 3: Commitment Consistency */}
+                  <KpiCard 
+                    label="Commitment Consistency" 
+                    value={consistency.toFixed(2)} 
+                    icon={<TrendingUp size={14} />} 
+                    color={consistency < 0.7 ? 'text-red-600' : 'text-emerald-600'} 
+                  />
+                  
+                  {/* Keeping these 3 as they fit the Narrative Intelligence theme well */}
+                  <KpiCard label="Topic Intensity" value={discrepancyLevel} icon={<RefreshCw size={14} />} />
                   <KpiCard label="Event Link" value="High" icon={<Zap size={14} />} />
                   <KpiCard label="CEO-CFO Gap" value="0.4" icon={<Activity size={14} />} />
               </div>

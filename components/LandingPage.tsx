@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 import { WaitlistModal } from './WaitlistModal';
 import { LiveCall } from './LiveCall';
 import { Navigation } from './Navigation';
@@ -27,27 +27,32 @@ export const LandingPage: React.FC = () => {
 
       {/* Hero Section */}
       <section className="pt-32 pb-24 px-6 md:px-8">
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-5xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tighter text-text mb-6 leading-[1.1]">
-            Real-time earnings call<br />narrative intelligence.
+            Detect real-time narrative deviations<br />in earnings calls.
           </h1>
-          <p className="text-lg md:text-xl text-muted/80 font-normal leading-relaxed max-w-xl mx-auto mb-10 antialiased">
-            Detect management confidence shifts, risk framing, and discrepancies in real-time. Contextualized by market events.
+          <p className="text-lg md:text-xl text-muted/80 font-normal leading-relaxed max-w-2xl mx-auto mb-10 antialiased">
+            Track confidence drift, risk shifts, and commitment erosion against historical baselines.
           </p>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button 
-                onClick={() => setIsWaitlistOpen(true)}
-                className="h-11 px-6 rounded-full bg-text text-white text-[14px] font-medium hover:bg-black/90 hover:scale-[1.02] active:scale-[0.98] transition-all w-full sm:w-auto shadow-sm"
-            >
-                Join the waitlist
-            </button>
-            <button 
-                onClick={scrollToLive}
-                className="h-11 px-6 rounded-full bg-white border border-borderLight text-muted hover:text-text hover:border-black/10 text-[14px] font-medium transition-all flex items-center justify-center gap-2 w-full sm:w-auto hover:bg-gray-50/50"
-            >
-                See live simulation
-            </button>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
+                <button 
+                    onClick={() => setIsWaitlistOpen(true)}
+                    className="h-11 px-6 rounded-full bg-text text-white text-[14px] font-medium hover:bg-black/90 hover:scale-[1.02] active:scale-[0.98] transition-all w-full sm:w-auto shadow-sm"
+                >
+                    Join Waitlist
+                </button>
+                <button 
+                    onClick={scrollToLive}
+                    className="h-11 px-6 rounded-full bg-white border border-borderLight text-muted hover:text-text hover:border-black/10 text-[14px] font-medium transition-all flex items-center justify-center gap-2 w-full sm:w-auto hover:bg-gray-50/50"
+                >
+                    View Live Simulation
+                </button>
+            </div>
+            <span className="text-[12px] text-muted font-medium opacity-60">
+                Every signal is traceable to verbatim transcript evidence.
+            </span>
           </div>
         </div>
       </section>
@@ -59,7 +64,7 @@ export const LandingPage: React.FC = () => {
             <div>
               <h2 className="text-2xl font-semibold tracking-tight text-text mb-1">Live Simulation</h2>
               <p className="text-[14px] text-muted">
-                  Detecting narrative shifts in 
+                  Detecting narrative deviations in 
                   <span className="font-semibold text-black ml-1">
                       {simulationHeader ? `${simulationHeader.company} (${simulationHeader.ticker})` : 'connecting...'}
                   </span>
@@ -78,6 +83,31 @@ export const LandingPage: React.FC = () => {
 
           {/* Embedded Simulation Component */}
           <LiveCall onRunUpdate={handleRunUpdate} />
+          
+          {/* Value Reinforcement Section (Added Below Simulation) */}
+          <div className="mt-16 pt-10 border-t border-borderLight">
+              <h3 className="text-[14px] font-semibold text-text uppercase tracking-wider mb-6">Built for institutional earnings analysis</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-black/5 flex items-center justify-center flex-none mt-0.5">
+                          <Check size={12} className="text-black" strokeWidth={3} />
+                      </div>
+                      <span className="text-[15px] text-muted leading-relaxed">Tracks narrative deviation across quarters.</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-black/5 flex items-center justify-center flex-none mt-0.5">
+                          <Check size={12} className="text-black" strokeWidth={3} />
+                      </div>
+                      <span className="text-[15px] text-muted leading-relaxed">Quantifies forward-looking risk drift.</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-black/5 flex items-center justify-center flex-none mt-0.5">
+                          <Check size={12} className="text-black" strokeWidth={3} />
+                      </div>
+                      <span className="text-[15px] text-muted leading-relaxed">Surfaces credibility shifts with transcript evidence.</span>
+                  </div>
+              </div>
+          </div>
 
         </div>
       </section>

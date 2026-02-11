@@ -78,6 +78,7 @@ export interface NarrativeDriver {
   explanation: string;  // One-line context (optional in minimal UI)
   sentiment: 'Positive' | 'Negative' | 'Neutral';
   trend: 'Up' | 'Down' | 'Flat'; // Explicit direction for UI arrow
+  baselineDelta?: string; // New field for Deviation Intelligence: e.g., "+0.18 vs Q2"
 }
 
 export interface AnalysisResponse {
@@ -90,6 +91,10 @@ export interface AnalysisResponse {
   // New Intelligence Fields
   discrepancy?: Discrepancy;
   attribution?: Attribution;
+  // Deviation Metrics
+  deviationIndex?: number; // -1.0 to 1.0
+  riskDrift?: number; // % change vs baseline
+  commitmentConsistency?: number; // 0.0 to 1.0
 }
 
 export interface ConnectionState {
