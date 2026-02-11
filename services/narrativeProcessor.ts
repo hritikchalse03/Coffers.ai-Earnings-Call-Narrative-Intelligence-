@@ -71,9 +71,24 @@ export class NarrativeProcessor {
              quote = text.split(',')[0] + '...';
         }
 
+        // --- THEME GENERATION FOR UI ---
+        let title = "Narrative Signal";
+        if (lower.includes("margin") || lower.includes("gross")) title = "Gross Margin Expansion";
+        else if (lower.includes("revenue") || lower.includes("sales")) title = "Revenue Growth";
+        else if (lower.includes("demand") || lower.includes("order")) title = "Demand Outlook";
+        else if (lower.includes("guidance") || lower.includes("outlook")) title = "FY Guidance Update";
+        else if (lower.includes("cash") || lower.includes("flow")) title = "Free Cash Flow Beat";
+        else if (lower.includes("supply") || lower.includes("chain")) title = "Supply Chain Update";
+        else if (lower.includes("ai") || lower.includes("genai") || lower.includes("intelligence")) title = "AI Strategy";
+        else if (lower.includes("risk") || lower.includes("regulatory")) title = "Regulatory Risk Commentary";
+        else if (lower.includes("inventory")) title = "Inventory Normalization";
+        else if (lower.includes("capex") || lower.includes("capital")) title = "CapEx Allocation";
+        else if (sentiment > 0) title = "Operational Beat";
+        else title = "Operational Headwind";
+
         drivers.push({
             quote: quote,
-            explanation: "", // Minimal UI doesn't use this anymore
+            explanation: title, // Storing the "Theme Title" here for the UI
             sentiment: sentiment > 0 ? 'Positive' : 'Negative',
             trend: sentiment > 0 ? 'Up' : 'Down'
         });

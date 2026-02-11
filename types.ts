@@ -42,8 +42,11 @@ export interface Attribution {
 
 export interface TranscriptSegment {
   id: string;
+  runId: string;       // UNIQUE RUN IDENTIFIER (UUID)
+  sequenceId: number;  // MONOTONIC SEQUENCE ID
   ticker: string;
-  timestamp: string; // ISO time
+  companyName: string; // Explicit company name for UI sync
+  timestamp: string;   // ISO time
   speaker: string;
   role: SpeakerType;
   text: string;

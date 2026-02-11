@@ -7,9 +7,11 @@ type StatusCallback = (state: ConnectionState) => void;
 type Regime = 'Trending_Up' | 'Trending_Down' | 'Mean_Reversion' | 'High_Vol';
 
 class SimulationSession {
+  runId: string;
   company: SimCompany;
   analysts: string[];
   startTime: number;
+  sequenceCounter: number; // Monotonic counter
   
   // Stochastic Process State
   momentum: number; 
@@ -19,6 +21,9 @@ class SimulationSession {
   messageLog: Set<string>; // Deduping
 
   constructor() {
+    this.runId = crypto.randomUUID(); // UNIQUE RUN ID
+    this.sequenceCounter = 0;
+    
     this.company = COMPANIES[Math.floor(Math.random() * COMPANIES.length)];
     // Randomize analysts (3 unique ones)
     this.analysts = [...ANALYSTS].sort(() => 0.5 - Math.random()).slice(0, 3);
@@ -31,7 +36,7 @@ class SimulationSession {
     this.regime = 'Mean_Reversion';
     this.regimeDuration = 5 + Math.floor(Math.random() * 5); // 5-10 ticks
 
-    console.log(`[Simulation] Init: ${this.company.name} (${this.company.sector})`);
+    console.log(`[Simulation] Init Run ${this.runId}: ${this.company.name} (${this.company.sector})`);
   }
 
   // CORE PHYSICS ENGINE: Stochastic Momentum Update
@@ -114,7 +119,6 @@ class SimulationSession {
     else this.regime = 'High_Vol';
 
     this.regimeDuration = 8 + Math.floor(Math.random() * 12); // New duration 8-20 ticks
-    // console.log(`[Regime Switch] -> ${this.regime} (for ${this.regimeDuration} ticks)`);
   }
 }
 
@@ -195,20 +199,18 @@ export class StreamService {
     }
 
     // 2. Determine Sentiment based on Current Regime & Randomness
-    // If we are in 'Trending_Up', generating positive text is more likely
     let sentimentType: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL' | 'QA_QUESTION' = 'NEUTRAL';
     
     if (role === SpeakerType.ANALYST) {
         sentimentType = 'QA_QUESTION';
     } else {
-        // Executive logic
         const regime = this.session.regime;
         let posProb = 0.33;
         let negProb = 0.33;
 
         if (regime === 'Trending_Up') { posProb = 0.7; negProb = 0.1; }
         if (regime === 'Trending_Down') { posProb = 0.1; negProb = 0.7; }
-        if (regime === 'High_Vol') { posProb = 0.45; negProb = 0.45; } // Polarized
+        if (regime === 'High_Vol') { posProb = 0.45; negProb = 0.45; }
 
         const s = Math.random();
         if (s < posProb) sentimentType = 'POSITIVE';
@@ -226,12 +228,16 @@ export class StreamService {
     
     const newMomentum = this.session.updateMomentum(sentimentVal);
     
-    // 5. Construct Transcript Segment
+    // 5. Construct Transcript Segment with RUN CONTEXT
     const timestampStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    
+    this.session.sequenceCounter++;
+
     const segment: TranscriptSegment = {
         id: crypto.randomUUID(),
+        runId: this.session.runId,           // CRITICAL: Scope to this run
+        sequenceId: this.session.sequenceCounter, // CRITICAL: Strict ordering
         ticker: this.session.company.ticker,
+        companyName: this.session.company.name, // CRITICAL: Sync header
         timestamp: timestampStr,
         speaker: speaker,
         role: role,
@@ -248,7 +254,6 @@ export class StreamService {
     // @ts-ignore
     const templates = TEMPLATES[type === 'QA_QUESTION' ? 'QA_QUESTION' : type];
     
-    // Retry logic for uniqueness
     let attempts = 0;
     let text = "";
     

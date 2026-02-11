@@ -6,9 +6,16 @@ import { Navigation } from './Navigation';
 
 export const LandingPage: React.FC = () => {
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  
+  // Dynamic Header State
+  const [simulationHeader, setSimulationHeader] = useState<{ company: string, ticker: string } | null>(null);
 
   const scrollToLive = () => {
     document.getElementById('live')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleRunUpdate = (companyName: string, ticker: string) => {
+      setSimulationHeader({ company: companyName, ticker: ticker });
   };
 
   return (
@@ -51,7 +58,13 @@ export const LandingPage: React.FC = () => {
           <div className="flex flex-col md:flex-row items-baseline justify-between mb-8 md:mb-10">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight text-text mb-1">Live Simulation</h2>
-              <p className="text-[14px] text-muted">Detecting narrative shifts in NVIDIA Q3 Earnings.</p>
+              <p className="text-[14px] text-muted">
+                  Detecting narrative shifts in 
+                  <span className="font-semibold text-black ml-1">
+                      {simulationHeader ? `${simulationHeader.company} (${simulationHeader.ticker})` : 'connecting...'}
+                  </span>
+                  {' '}Q3 Earnings.
+              </p>
             </div>
             {/* Status Pill */}
             <div className="hidden md:flex items-center gap-2 text-[12px] font-medium text-emerald-700 bg-emerald-50/50 px-3 py-1 rounded-full border border-emerald-100/50 mt-4 md:mt-0">
@@ -64,7 +77,7 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Embedded Simulation Component */}
-          <LiveCall />
+          <LiveCall onRunUpdate={handleRunUpdate} />
 
         </div>
       </section>
