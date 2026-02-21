@@ -4,7 +4,11 @@ import { WaitlistModal } from './WaitlistModal';
 import { LiveCall } from './LiveCall';
 import { Navigation } from './Navigation';
 
-export const LandingPage: React.FC = () => {
+interface LandingPageProps {
+  onNavigate?: (page: string) => void;
+}
+
+export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   
   // Dynamic Header State
@@ -23,7 +27,7 @@ export const LandingPage: React.FC = () => {
       <WaitlistModal isOpen={isWaitlistOpen} onClose={() => setIsWaitlistOpen(false)} />
 
       {/* Navigation */}
-      <Navigation activeTab="" onTabChange={() => {}} onJoinClick={() => setIsWaitlistOpen(true)} />
+      <Navigation activeTab="home" onTabChange={(tab) => onNavigate?.(tab)} onJoinClick={() => setIsWaitlistOpen(true)} />
 
       {/* Hero Section */}
       <section className="pt-32 pb-24 px-6 md:px-8">
